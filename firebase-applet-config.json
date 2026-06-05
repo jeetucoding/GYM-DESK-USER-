@@ -1,0 +1,10 @@
+{
+  "projectId": "gum-erp-project",
+  "appId": "1:568422536253:web:ee7c8aa617cf255e97c654",
+  "apiKey": "AIzaSyDQIguIml5uwyEqqzxxUquxxat6nnlYEK4",
+  "authDomain": "gum-erp-project.firebaseapp.com",
+  "databaseURL": "https://gum-erp-project-default-rtdb.firebaseio.com",
+  "storageBucket": "gum-erp-project.firebasestorage.app",
+  "messagingSenderId": "568422536253",
+  "measurementId": "G-JX44FVM6MQ"
+}

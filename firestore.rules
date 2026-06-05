@@ -1,0 +1,118 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. catch-all rule: deny by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Phase 3: Global validation helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Helper: matches authenticated user or direct member record owner
+    function isMemberOwner(memberId) {
+      return memberId == request.auth.uid || 
+        get(/databases/$(database)/documents/members/$(memberId)).data.user_id == request.auth.uid;
+    }
+
+    // Schema Validation Helpers
+    function isValidMember(m) {
+      return m.id is string && m.id.size() <= 128 &&
+             m.name is string && m.name.size() <= 128 &&
+             m.mobile is string && m.mobile.size() <= 20 &&
+             m.gender is string && m.gender.size() <= 10 &&
+             m.age is number && m.age >= 0 && m.age <= 120 &&
+             m.join_date is string && m.join_date.size() <= 50;
+    }
+
+    function isValidAttendance(att) {
+      return att.id is string && att.id.size() <= 128 &&
+             att.member_id is string && att.member_id.size() <= 128 &&
+             att.date is string && att.date.size() <= 50;
+    }
+
+    function isValidPaymentRequest(r) {
+      return r.id is string && r.id.size() <= 128 &&
+             r.member_id is string && r.member_id.size() <= 128 &&
+             r.amount is number && r.amount >= 0 &&
+             r.payment_mode is string && r.payment_mode.size() <= 50 &&
+             r.transaction_id is string && r.transaction_id.size() <= 128 &&
+             r.status is string && r.status in ['Pending', 'Verified', 'Rejected'];
+    }
+
+    // Plans Collection Match
+    match /plans/{planId} {
+      allow get, list: if isSignedIn();
+      allow write: if false; // System-operated / Admin managed only
+    }
+
+    // Members Collection Match
+    match /members/{memberId} {
+      allow get: if isSignedIn() && (resource.data.user_id == request.auth.uid || resource.data.id == request.auth.uid || memberId == request.auth.uid);
+      allow list: if isSignedIn() && (resource.data.user_id == request.auth.uid || resource.data.id == request.auth.uid);
+      
+      allow create: if isSignedIn() && isValidId(memberId) && 
+                      incoming().user_id == request.auth.uid &&
+                      isValidMember(incoming());
+
+      allow update: if isSignedIn() && isValidId(memberId) &&
+                      existing().user_id == request.auth.uid &&
+                      incoming().user_id == request.auth.uid &&
+                      isValidMember(incoming()) &&
+                      incoming().status == existing().status; // Users cannot elevate/renew status themselves
+    }
+
+    // Attendance Collection Match
+    match /attendance/{attendanceId} {
+      allow get: if isSignedIn() && isMemberOwner(resource.data.member_id);
+      allow list: if isSignedIn() && isMemberOwner(resource.data.member_id);
+      
+      allow create: if isSignedIn() && isValidId(attendanceId) &&
+                      isMemberOwner(incoming().member_id) &&
+                      isValidAttendance(incoming());
+                      
+      allow update, delete: if false; // Attendance log is immutable once filed
+    }
+
+    // Payments Collection Match
+    match /payments/{paymentId} {
+      allow get: if isSignedIn() && isMemberOwner(resource.data.member_id);
+      allow list: if isSignedIn() && isMemberOwner(resource.data.member_id);
+      allow write: if false; // Read-only for members (managed via payments systems / admins)
+    }
+
+    // Payment Requests Collection Match
+    match /payment_requests/{requestId} {
+      allow get: if isSignedIn() && isMemberOwner(resource.data.member_id);
+      allow list: if isSignedIn() && isMemberOwner(resource.data.member_id);
+      
+      allow create: if isSignedIn() && isValidId(requestId) &&
+                      isMemberOwner(incoming().member_id) &&
+                      incoming().status == 'Pending' &&
+                      isValidPaymentRequest(incoming());
+
+      allow update: if isSignedIn() && isValidId(requestId) &&
+                      isMemberOwner(existing().member_id) &&
+                      existing().status == 'Pending' &&
+                      incoming().status == 'Pending' &&
+                      isValidPaymentRequest(incoming());
+                      
+      allow delete: if false;
+    }
+  }
+}

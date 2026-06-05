@@ -1,0 +1,6 @@
+{
+  "name": "GymDesk User App",
+  "description": "User portal for GymDesk members to track membership plans, attendance, view payments, request renewals, and contact support.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

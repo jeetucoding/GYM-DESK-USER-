@@ -1,0 +1,112 @@
+{
+  "entities": {
+    "plan": {
+      "title": "Plan",
+      "description": "A membership plan or tier available to gym members",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier of the plan" },
+        "name": { "type": "string", "description": "Representative name of the tier" },
+        "price": { "type": "number", "description": "The cost of enrollment" },
+        "duration_months": { "type": "number", "description": "Duration in months" },
+        "duration_days": { "type": "number", "description": "Duration in days" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "price"]
+    },
+    "member": {
+      "title": "Member",
+      "description": "An enrolled library or gym member",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "user_id": { "type": "string", "description": "Links to auth.currentUser.uid" },
+        "name": { "type": "string" },
+        "mobile": { "type": "string" },
+        "whatsapp": { "type": "string" },
+        "gender": { "type": "string" },
+        "age": { "type": "number" },
+        "address": { "type": "string" },
+        "join_date": { "type": "string" },
+        "plan_id": { "type": "string" },
+        "status": { "type": "string", "enum": ["Active", "Expired"] },
+        "plan_start_date": { "type": "string" },
+        "plan_end_date": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "mobile", "gender", "age", "join_date", "status"]
+    },
+    "attendance": {
+      "title": "Attendance",
+      "description": "A workout check-in log entry",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "member_id": { "type": "string" },
+        "date": { "type": "string" },
+        "check_in_time": { "type": "string" },
+        "check_out_time": { "type": "string" },
+        "status": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "member_id", "date"]
+    },
+    "payment": {
+      "title": "Payment",
+      "description": "Historically transacted or outstanding dues",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "member_id": { "type": "string" },
+        "amount": { "type": "number" },
+        "due_amount": { "type": "number" },
+        "payment_mode": { "type": "string", "enum": ["UPI", "Cash", "Bank"] },
+        "payment_date": { "type": "string" },
+        "receipt_number": { "type": "string" },
+        "status": { "type": "string", "enum": ["Paid", "Pending", "Partial"] },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "member_id", "amount", "payment_date", "status"]
+    },
+    "payment_request": {
+      "title": "PaymentRequest",
+      "description": "A payment submission request waiting for administrative approval",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "member_id": { "type": "string" },
+        "amount": { "type": "number" },
+        "payment_mode": { "type": "string" },
+        "transaction_id": { "type": "string" },
+        "screenshot_url": { "type": "string" },
+        "status": { "type": "string", "enum": ["Pending", "Verified", "Rejected"] },
+        "requested_at": { "type": "string", "format": "date-time" },
+        "verified_at": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string" }
+      },
+      "required": ["id", "member_id", "amount", "payment_mode", "transaction_id", "status", "requested_at"]
+    }
+  },
+  "firestore": {
+    "/plans/{planId}": {
+      "schema": "plan",
+      "description": "Collection of available subscription packages"
+    },
+    "/members/{memberId}": {
+      "schema": "member",
+      "description": "Directory of gym member profiles"
+    },
+    "/attendance/{attendanceId}": {
+      "schema": "attendance",
+      "description": "Daily workout attendance logs"
+    },
+    "/payments/{paymentId}": {
+      "schema": "payment",
+      "description": "Billing payments and dues log"
+    },
+    "/payment_requests/{paymentRequestId}": {
+      "schema": "payment_request",
+      "description": "Pending payment verification request logs"
+    }
+  }
+}
